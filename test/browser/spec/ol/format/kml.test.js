@@ -2204,6 +2204,50 @@ describe('ol.format.KML', function () {
           assert.strictEqual(f.get('country').value, 'United-Kingdom');
           assert.strictEqual(f.get('country').displayName, 'Country');
         });
+
+        it('ignores ExtendedData with reserved names', function () {
+          const text =
+            '<kml xmlns="http://earth.google.com/kml/2.2">' +
+            '  <Placemark xmlns="http://earth.google.com/kml/2.2">' +
+            '    <styleUrl>#foo</styleUrl>' +
+            '    <Style>' +
+            '      <PolyStyle>' +
+            '        <fill>0</fill>' +
+            '      </PolyStyle>' +
+            '    </Style>' +
+            '    <Point>' +
+            '      <coordinates>1,2,3</coordinates>' +
+            '    </Point>' +
+            '    <ExtendedData>' +
+            '      <Data name="geometry">' +
+            '        <value>a</value>' +
+            '      </Data>' +
+            '      <Data name="Style">' +
+            '        <value>b</value>' +
+            '      </Data>' +
+            '      <Data name="styleUrl">' +
+            '        <value>c</value>' +
+            '      </Data>' +
+            '      <Data name="foo">' +
+            '        <value>bar</value>' +
+            '      </Data>' +
+            '    </ExtendedData>' +
+            '  </Placemark>' +
+            '</kml>';
+          const fs = format.readFeatures(text);
+          assert.lengthOf(fs, 1);
+          const f = fs[0];
+          assert.instanceOf(f, Feature);
+          assert.hasAllKeys(f.getProperties(), ['foo', 'geometry', 'styleUrl']);
+          const g = f.getGeometry();
+          assert.instanceOf(g, Point);
+          assert.deepEqual(g.getCoordinates(), [1, 2, 3]);
+          assert.match(f.get('styleUrl'), /#foo$/);
+          const styleArray = f.getStyleFunction()(f, 0);
+          assert.lengthOf(styleArray, 1);
+          assert.instanceOf(styleArray[0], Style);
+          assert.strictEqual(f.get('foo'), 'bar');
+        });
       });
 
       describe('styles', function () {
