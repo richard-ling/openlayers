@@ -2163,24 +2163,29 @@ const DATA_PARSERS = makeParsersNS(NAMESPACE_URIS, {
  */
 function dataParser(node, objectStack) {
   const name = node.getAttribute('name');
-  parseNode(DATA_PARSERS, node, objectStack);
+  /** @type {KMLObject} */
+  const {value, displayName} = pushParseAndPop(
+    {},
+    DATA_PARSERS,
+    node,
+    objectStack,
+  );
   const featureObject = /** @type {KMLObject} */ (
     objectStack[objectStack.length - 1]
   );
-  if (name && featureObject.displayName) {
+  if (name && displayName) {
     featureObject[name] = {
-      value: featureObject.value,
-      displayName: featureObject.displayName,
+      value: value,
+      displayName: displayName,
       toString: function () {
-        return featureObject.value;
+        return value;
       },
     };
   } else if (name !== null) {
-    featureObject[name] = featureObject.value;
-  } else if (featureObject.displayName !== null) {
-    featureObject[featureObject.displayName] = featureObject.value;
+    featureObject[name] = value;
+  } else if (displayName) {
+    featureObject[displayName] = value;
   }
-  delete featureObject['value'];
 }
 
 /**
