@@ -115,7 +115,7 @@ const ICON_ANCHOR_UNITS_MAP = {
 const PLACEMARK_PARSERS = makeParsersNS(
   NAMESPACE_URIS,
   {
-    'ExtendedData': extendedDataParser,
+    'ExtendedData': placemarkExtendedDataParser,
     'Region': regionParser,
     'MultiGeometry': makeObjectPropertySetter(readMultiGeometry, 'geometry'),
     'LineString': makeObjectPropertySetter(readLineString, 'geometry'),
@@ -2197,6 +2197,34 @@ const EXTENDED_DATA_PARSERS = makeParsersNS(NAMESPACE_URIS, {
  */
 function extendedDataParser(node, objectStack) {
   parseNode(EXTENDED_DATA_PARSERS, node, objectStack);
+}
+
+/**
+ * Keys of the placemark object with special meaning to readPlacemark_, and which
+ * ExtendedData must therefore not overwrite.
+ * @const
+ * @type {Set<string>}
+ */
+const PLACEMARK_RESERVED_KEYS = new Set(['geometry', 'Style', 'styleUrl']);
+
+/**
+ * @param {Element} node Node.
+ * @param {Array<*>} objectStack Object stack.
+ */
+function placemarkExtendedDataParser(node, objectStack) {
+  /** @type {KMLObject} */
+  const extendedData = pushParseAndPop(
+    {},
+    EXTENDED_DATA_PARSERS,
+    node,
+    objectStack,
+  );
+  const placemarkObject = objectStack[objectStack.length - 1];
+  for (const key in extendedData) {
+    if (!PLACEMARK_RESERVED_KEYS.has(key)) {
+      placemarkObject[key] = extendedData[key];
+    }
+  }
 }
 
 /**
